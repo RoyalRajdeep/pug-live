@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Pug Live</title>
+    <meta name="description" content="The online Live Pug Renderer">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+</head>
+
+<body>
+    <style>
+        .title {
+            border: 1px solid;
+            padding: 5px 15px;
+        }
+    </style>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <h3 class="text-primary">
+                    <span class="title">PUG LIVE</span>
+                </h3>
+            </div>
+            <hr />
+            <div class="col-md-6">
+                <label for="pugContainer">Pug Data</label>
+                <div id="pugContainer" style="min-width: 400px; min-height: 320px; border: 1px solid grey"></div>
+                <div class="alet alert-danger">
+                    <p id="invalidTemplate"></p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label for="jsonContainer">JSON Data</label>
+                <div id="jsonContainer" style="min-width: 400px; min-height: 320px; border: 1px solid grey"></div>
+                <div class="alet alert-danger">
+                    <p id="invalidPayload"></p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <style>
+        #result {
+            clear: both;
+            margin-top: 10;
+        }
+    </style>
+    <hr />
+    <div id="result"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.21.2/min/vs/loader.min.js"></script>
+    <script>
+        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.21.2/min/vs/' } });
+        require(['vs/editor/editor.main'], function () {
+            window.pugEditor = monaco.editor.create(document.getElementById('pugContainer'), {
+                value: '',
+                language: 'pug',
+                "autoIndent": true,
+                "formatOnPaste": true,
+                "formatOnType": true,
+                fontSize: 12,
+                automaticLayout: true,
+                cursorBlinking: 'blink',
+            });
+
+            window.jsonEditor = monaco.editor.create(document.getElementById('jsonContainer'), {
+                value: '',
+                language: 'json',
+                "autoIndent": true,
+                "formatOnPaste": true,
+                "formatOnType": true,
+                fontSize: 12,
+                automaticLayout: true,
+                cursorBlinking: 'blink',
+                wordWrap: 'on'
+            });
+
+            window.pugEditor.onDidChangeModelContent(e => {
+                renderTemplate();
+            });
+
+            window.jsonEditor.onDidChangeModelContent(e => {
+                renderTemplate();
+            });
+        });
+    </script>
+    <script src="https://pugjs.org/js/pug.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", init, false);
+        var pug, $result, $invalidPayload, $invalidTemplate;
+        function init() {
+            pug = require("pug");
+            $result = document.querySelector("#result");
+            $invalidPayload = document.querySelector("#invalidPayload");
+            $invalidTemplate = document.querySelector("#invalidTemplate");
+        }
+
+        function renderTemplate() {
+            var parsedJSON = {};
+            $invalidTemplate.innerHTML = "";
+
+            if (!pugEditor.getValue().length) return;
+
+            if (jsonEditor.getValue().length) {
+                try {
+                    parsedJSON = JSON.parse(jsonEditor.getValue());
+                    $invalidPayload.innerHTML = "";
+                } catch (e) {
+                    console.log("invalid json");
+                    $invalidPayload.innerHTML = "Invalid JSON";
+                    parsedJSON = {};
+                }
+            } else {
+                parsedJSON = {};
+                $invalidPayload.innerHTML = "";
+            }
+            try {
+                var result = pug.render(pugEditor.getValue(), parsedJSON);
+                $result.innerHTML = result;
+            } catch (e) {
+                $invalidTemplate.innerHTML = e.message;
+                console.dir(e);
+            }
+        }
+    </script>
+</body>
+
+</html>
